@@ -29,7 +29,7 @@ float PrepassScreenSpaceShadows(float3 positionWS, uint a_eyeIndex)
 #	endif
 		
 		float shadow = TexOcclusionSampler.SampleLevel(LinearSampler, coords, 0);
-		return shadow;
+		return shadow.r;
 	}
 	return 1;
 #endif
