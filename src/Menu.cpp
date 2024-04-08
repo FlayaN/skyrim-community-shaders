@@ -437,18 +437,29 @@ void Menu::DrawSettings()
 
 			ImGui::TableNextColumn();
 			if (ImGui::BeginListBox("##FeatureList", { -FLT_MIN, -FLT_MIN })) {
-				for (size_t i = 0; i < sortedList.size(); i++)
+				for (size_t i = 0; i < sortedList.size(); i++) {
+					if ((sortedList[i]->loaded || !sortedList[i]->version.empty()) && !shaderCache.IsDiskCache()) {
+						if (ImGui::Checkbox(fmt::format("##ToggleFeature##{}", i).c_str(), &sortedList[i]->loaded)) {
+							shaderCache.Clear();
+							sortedList[i]->ClearShaderCache();
+						}
+						ImGui::SameLine();
+					}
+
 					if (sortedList[i]->loaded) {
-						if (ImGui::Selectable(fmt::format("{} ", sortedList[i]->GetName()).c_str(), selectedFeature == i, ImGuiSelectableFlags_SpanAllColumns))
+						if (ImGui::Selectable(fmt::format("{} ", sortedList[i]->GetName()).c_str(), selectedFeature == i, ImGuiSelectableFlags_None))
 							selectedFeature = i;
 						ImGui::SameLine();
 						ImGui::TextDisabled(fmt::format("({})", sortedList[i]->version).c_str());
 					} else if (!sortedList[i]->version.empty()) {
 						ImGui::TextDisabled(fmt::format("{} ({})", sortedList[i]->GetName(), sortedList[i]->version).c_str());
-						if (auto _tt = Util::HoverTooltipWrapper()) {
-							ImGui::Text(sortedList[i]->failedLoadedMessage.c_str());
+						if (!sortedList[i]->failedLoadedMessage.empty()) {
+							if (auto _tt = Util::HoverTooltipWrapper()&&) {
+								ImGui::Text(sortedList[i]->failedLoadedMessage.c_str());
+							}
 						}
 					}
+				}
 				ImGui::EndListBox();
 			}
 
