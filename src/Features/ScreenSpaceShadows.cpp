@@ -53,7 +53,7 @@ void ScreenSpaceShadows::ClearShaderCache()
 	}
 }
 
-ID3D11ComputeShader* ScreenSpaceShadows::GetComputeRaymarch()
+ID3D11ComputeShader* ScreenSpaceShadows::GetComputeRaymarch(int eyeIndex)
 {
 	static uint sampleCount = bendSettings.SampleCount;
 
@@ -63,32 +63,25 @@ ID3D11ComputeShader* ScreenSpaceShadows::GetComputeRaymarch()
 			raymarchCS->Release();
 			raymarchCS = nullptr;
 		}
-	}
-
-	if (!raymarchCS) {
-		logger::debug("Compiling RaymarchCS");
-		raymarchCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\ScreenSpaceShadows\\RaymarchCS.hlsl", { { "SAMPLE_COUNT", std::format("{}", sampleCount * 64).c_str() } }, "cs_5_0");
-	}
-	return raymarchCS;
-}
-
-ID3D11ComputeShader* ScreenSpaceShadows::GetComputeRaymarchRight()
-{
-	static uint sampleCount = bendSettings.SampleCount;
-
-	if (sampleCount != bendSettings.SampleCount) {
-		sampleCount = bendSettings.SampleCount;
 		if (raymarchRightCS) {
 			raymarchRightCS->Release();
 			raymarchRightCS = nullptr;
 		}
 	}
 
-	if (!raymarchRightCS) {
-		logger::debug("Compiling RaymarchCS RIGHT");
-		raymarchRightCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\ScreenSpaceShadows\\RaymarchCS.hlsl", { { "SAMPLE_COUNT", std::format("{}", sampleCount * 64).c_str() }, { "RIGHT", "" } }, "cs_5_0");
+	if (eyeIndex == 0) {
+		if (!raymarchCS) {
+			logger::debug("Compiling RaymarchCS");
+			raymarchCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\ScreenSpaceShadows\\RaymarchCS.hlsl", { { "SAMPLE_COUNT", std::format("{}", sampleCount * 64).c_str() } }, "cs_5_0");
+		}
+		return raymarchCS;
+	} else {
+		if (!raymarchRightCS) {
+			logger::debug("Compiling RaymarchCS RIGHT");
+			raymarchRightCS = (ID3D11ComputeShader*)Util::CompileShader(L"Data\\Shaders\\ScreenSpaceShadows\\RaymarchCS.hlsl", { { "SAMPLE_COUNT", std::format("{}", sampleCount * 64).c_str() }, { "RIGHT", "" } }, "cs_5_0");
+		}
+		return raymarchRightCS;
 	}
-	return raymarchRightCS;
 }
 
 ID3D11ComputeShader* ScreenSpaceShadows::GetComputeNormalMappingShadows()
@@ -100,57 +93,21 @@ ID3D11ComputeShader* ScreenSpaceShadows::GetComputeNormalMappingShadows()
 	return normalMappingShadowsCS;
 }
 
-void ScreenSpaceShadows::DrawShadows()
+void ScreenSpaceShadows::DispatchRaymarch(int eyeIndex, float4 lightProjection, int viewportSize[2], int maxRenderBounds[2])
 {
-	if (!bendSettings.Enable)
-		return;
-
-	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
 	auto& context = State::GetSingleton()->context;
-
 	auto shadowState = State::GetSingleton()->shadowState;
-	auto viewport = RE::BSGraphics::State::GetSingleton();
-
-	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
-	auto dirLight = skyrim_cast<RE::NiDirectionalLight*>(accumulator->GetRuntimeData().activeShadowSceneNode->GetRuntimeData().sunLight->light.get());
-
-	auto state = State::GetSingleton();
-
-	auto& directionNi = dirLight->GetWorldDirection();
-	float3 light = { directionNi.x, directionNi.y, directionNi.z };
-	light.Normalize();
-	float4 lightProjection = float4(-light.x, -light.y, -light.z, 0.0f);
 
 	Matrix viewProjMat = !REL::Module::IsVR() ?
 	                         shadowState->GetRuntimeData().cameraData.getEye().viewProjMat :
-	                         shadowState->GetVRRuntimeData().cameraData.getEye().viewProjMat;
+	                         shadowState->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewProjMat;
 
 	lightProjection = DirectX::SimpleMath::Vector4::Transform(lightProjection, viewProjMat);
 	float lightProjectionF[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
 
-	int viewportSize[2] = { (int)state->screenWidth, (int)state->screenHeight };
-
-	if (REL::Module::IsVR())
-		viewportSize[0] /= 2;
-
 	int minRenderBounds[2] = { 0, 0 };
-	int maxRenderBounds[2] = {
-		(int)((float)viewportSize[0] * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale),
-		(int)((float)viewportSize[1] * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale)
-	};
 
-	auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
-	context->CSSetShaderResources(0, 1, &depth.depthSRV);
-
-	auto shadowMask = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGET::kSHADOW_MASK];
-	context->CSSetUnorderedAccessViews(0, 1, &shadowMask.UAV, nullptr);
-
-	context->CSSetSamplers(0, 1, &pointBorderSampler);
-
-	auto buffer = raymarchCB->CB();
-	context->CSSetConstantBuffers(1, 1, &buffer);
-
-	context->CSSetShader(GetComputeRaymarch(), nullptr, 0);
+	context->CSSetShader(GetComputeRaymarch(eyeIndex), nullptr, 0);
 
 	auto dispatchList = Bend::BuildDispatchList(lightProjectionF, viewportSize, minRenderBounds, maxRenderBounds);
 
@@ -178,44 +135,49 @@ void ScreenSpaceShadows::DrawShadows()
 
 		context->Dispatch(dispatchData.WaveCount[0], dispatchData.WaveCount[1], dispatchData.WaveCount[2]);
 	}
+}
 
-	if (REL::Module::IsVR()) {
-		lightProjection = float4(-light.x, -light.y, -light.z, 0.0f);
+void ScreenSpaceShadows::DrawShadows()
+{
+	if (!bendSettings.Enable)
+		return;
 
-		viewProjMat = shadowState->GetVRRuntimeData().cameraData.getEye(1).viewProjMat;
+	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
+	auto viewport = RE::BSGraphics::State::GetSingleton();
+	auto state = State::GetSingleton();
+	auto& context = state->context;
 
-		lightProjection = DirectX::SimpleMath::Vector4::Transform(lightProjection, viewProjMat);
+	auto accumulator = RE::BSGraphics::BSShaderAccumulator::GetCurrentAccumulator();
+	auto dirLight = skyrim_cast<RE::NiDirectionalLight*>(accumulator->GetRuntimeData().activeShadowSceneNode->GetRuntimeData().sunLight->light.get());
 
-		float lightProjectionRightF[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };
+	auto& directionNi = dirLight->GetWorldDirection();
+	float3 light = { directionNi.x, directionNi.y, directionNi.z };
+	light.Normalize();
+	float4 lightProjection = float4(-light.x, -light.y, -light.z, 0.0f);
 
-		context->CSSetShader(GetComputeRaymarchRight(), nullptr, 0);
+	auto depth = renderer->GetDepthStencilData().depthStencils[RE::RENDER_TARGETS_DEPTHSTENCIL::kPOST_ZPREPASS_COPY];
+	context->CSSetShaderResources(0, 1, &depth.depthSRV);
 
-		dispatchList = Bend::BuildDispatchList(lightProjectionRightF, viewportSize, minRenderBounds, maxRenderBounds);
+	auto shadowMask = renderer->GetRuntimeData().renderTargets[RE::RENDER_TARGET::kSHADOW_MASK];
+	context->CSSetUnorderedAccessViews(0, 1, &shadowMask.UAV, nullptr);
 
-		for (int i = 0; i < dispatchList.DispatchCount; i++) {
-			auto dispatchData = dispatchList.Dispatch[i];
+	context->CSSetSamplers(0, 1, &pointBorderSampler);
 
-			RaymarchCB data{};
-			data.LightCoordinate[0] = dispatchList.LightCoordinate_Shader[0];
-			data.LightCoordinate[1] = dispatchList.LightCoordinate_Shader[1];
-			data.LightCoordinate[2] = dispatchList.LightCoordinate_Shader[2];
-			data.LightCoordinate[3] = dispatchList.LightCoordinate_Shader[3];
+	auto buffer = raymarchCB->CB();
+	context->CSSetConstantBuffers(1, 1, &buffer);
 
-			data.WaveOffset[0] = dispatchData.WaveOffset_Shader[0];
-			data.WaveOffset[1] = dispatchData.WaveOffset_Shader[1];
+	int viewportSize[2] = { (int)state->screenWidth, (int)state->screenHeight };
 
-			data.FarDepthValue = 1.0f;
-			data.NearDepthValue = 0.0f;
+	if (REL::Module::IsVR())
+		viewportSize[0] /= 2;
 
-			data.InvDepthTextureSize[0] = 1.0f / (float)viewportSize[0];
-			data.InvDepthTextureSize[1] = 1.0f / (float)viewportSize[1];
+	int maxRenderBounds[2] = {
+		(int)((float)viewportSize[0] * viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale),
+		(int)((float)viewportSize[1] * viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale)
+	};
 
-			data.settings = bendSettings;
-
-			raymarchCB->Update(data);
-
-			context->Dispatch(dispatchData.WaveCount[0], dispatchData.WaveCount[1], dispatchData.WaveCount[2]);
-		}
+	for (int eyeIndex = 0; eyeIndex < (REL::Module::IsVR() ? 2 : 1); eyeIndex++) {
+		DispatchRaymarch(eyeIndex, lightProjection, viewportSize, maxRenderBounds);
 	}
 
 	ID3D11ShaderResourceView* views[1]{ nullptr };

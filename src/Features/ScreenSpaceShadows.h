@@ -57,8 +57,7 @@ struct ScreenSpaceShadows : Feature
 	virtual void DrawSettings();
 
 	virtual void ClearShaderCache() override;
-	ID3D11ComputeShader* GetComputeRaymarch();
-	ID3D11ComputeShader* GetComputeRaymarchRight();
+	ID3D11ComputeShader* GetComputeRaymarch(int eyeIndex);
 
 	ID3D11ComputeShader* GetComputeNormalMappingShadows();
 
@@ -67,6 +66,7 @@ struct ScreenSpaceShadows : Feature
 	virtual void Load(json& o_json);
 	virtual void Save(json& o_json);
 
+	void DispatchRaymarch(int eyeIndex, float4 lightProjection, int viewportSize[2], int maxRenderBounds[2]);
 	void DrawShadows();
 	void DrawNormalMappingShadows();
 
