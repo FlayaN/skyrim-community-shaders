@@ -331,12 +331,10 @@ void LightLimitFix::SetLightPosition(LightLimitFix::LightData& a_light, RE::NiPo
 			eyePosition = eyePositionCached[eyeIndex];
 			viewMatrix = viewMatrixCached[eyeIndex];
 		} else {
-			eyePosition = eyeCount == 1 ?
-			                  state->GetRuntimeData().posAdjust.getEye(eyeIndex) :
-			                  state->GetVRRuntimeData().posAdjust.getEye(eyeIndex);
-			viewMatrix = eyeCount == 1 ?
-			                 state->GetRuntimeData().cameraData.getEye(eyeIndex).viewMat :
-			                 state->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewMat;
+			GET_INSTANCE_EYE_MEMBER(posAdjust, state, eyeIndex)
+			eyePosition = posAdjust;
+			GET_INSTANCE_EYE_MEMBER(cameraData, state, eyeIndex)
+			viewMatrix = cameraData.viewMat;
 		}
 
 		auto worldPos = a_initialPosition - eyePosition;
@@ -737,12 +735,10 @@ void LightLimitFix::UpdateLights()
 	// Cache data since cameraData can become invalid in first-person
 
 	for (int eyeIndex = 0; eyeIndex < eyeCount; eyeIndex++) {
-		eyePositionCached[eyeIndex] = eyeCount == 1 ?
-		                                  state->GetRuntimeData().posAdjust.getEye(eyeIndex) :
-		                                  state->GetVRRuntimeData().posAdjust.getEye(eyeIndex);
-		viewMatrixCached[eyeIndex] = eyeCount == 1 ?
-		                                 state->GetRuntimeData().cameraData.getEye(eyeIndex).viewMat :
-		                                 state->GetVRRuntimeData().cameraData.getEye(eyeIndex).viewMat;
+		GET_INSTANCE_EYE_MEMBER(posAdjust, state, eyeIndex)
+		eyePositionCached[eyeIndex] = posAdjust;
+		GET_INSTANCE_EYE_MEMBER(cameraData, state, eyeIndex)
+		viewMatrixCached[eyeIndex] = cameraData.viewMat;
 		viewMatrixCached[eyeIndex].Invert(viewMatrixInverseCached[eyeIndex]);
 	}
 
@@ -925,7 +921,8 @@ void LightLimitFix::UpdateLights()
 	static auto& context = State::GetSingleton()->context;
 
 	{
-		auto projMatrixUnjittered = eyeCount == 1 ? state->GetRuntimeData().cameraData.getEye().projMatrixUnjittered : state->GetVRRuntimeData().cameraData.getEye().projMatrixUnjittered;
+		GET_INSTANCE_EYE_MEMBER(cameraData, state, 0)
+		auto projMatrixUnjittered = cameraData.projMatrixUnjittered;
 		float fov = atan(1.0f / static_cast<float4x4>(projMatrixUnjittered).m[0][0]) * 2.0f * (180.0f / 3.14159265359f);
 
 		static float _near = 0.0f, _far = 0.0f, _fov = 0.0f, _lightsNear = 0.0f, _lightsFar = 0.0f;

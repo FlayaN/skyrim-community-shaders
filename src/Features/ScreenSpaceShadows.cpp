@@ -121,9 +121,8 @@ void ScreenSpaceShadows::DrawShadows()
 	light.Normalize();
 	float4 lightProjection = float4(-light.x, -light.y, -light.z, 0.0f);
 
-	Matrix viewProjMat = !REL::Module::IsVR() ?
-	                         shadowState->GetRuntimeData().cameraData.getEye().viewProjMat :
-	                         shadowState->GetVRRuntimeData().cameraData.getEye().viewProjMat;
+	GET_INSTANCE_EYE_MEMBER(cameraData, shadowState, 0)
+	Matrix viewProjMat = cameraData.viewProjMat;
 
 	lightProjection = DirectX::SimpleMath::Vector4::Transform(lightProjection, viewProjMat);
 	float lightProjectionF[4] = { lightProjection.x, lightProjection.y, lightProjection.z, lightProjection.w };

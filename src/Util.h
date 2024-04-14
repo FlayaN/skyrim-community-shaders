@@ -13,6 +13,9 @@
 #define GET_INSTANCE_MEMBER(a_value, a_source) \
 	auto& a_value = !REL::Module::IsVR() ? a_source->GetRuntimeData().a_value : a_source->GetVRRuntimeData().a_value;
 
+#define GET_INSTANCE_EYE_MEMBER(a_value, a_source, a_eyeIndex) \
+	auto a_value = !REL::Module::IsVR() ? a_source->GetRuntimeData().a_value.getEye() : a_source->GetVRRuntimeData().a_value.getEye(a_eyeIndex);
+
 namespace Util
 {
 	void StoreTransform3x4NoScale(DirectX::XMFLOAT3X4& Dest, const RE::NiTransform& Source);

@@ -499,16 +499,16 @@ void ScreenSpaceGI::UpdateSB()
 	SSGICB data;
 	{
 		for (int eyeIndex = 0; eyeIndex < (1 + REL::Module::IsVR()); ++eyeIndex) {
-			auto eye = (!REL::Module::IsVR()) ? state->GetRuntimeData().cameraData.getEye(eyeIndex) : state->GetVRRuntimeData().cameraData.getEye(eyeIndex);
+			GET_INSTANCE_EYE_MEMBER(cameraData, state, eyeIndex)
 
 			data.PrevInvViewMat[eyeIndex] = prevInvView[eyeIndex];
-			data.NDCToViewMul[eyeIndex] = { 2.0f / eye.projMat(0, 0), -2.0f / eye.projMat(1, 1) };
-			data.NDCToViewAdd[eyeIndex] = { -1.0f / eye.projMat(0, 0), 1.0f / eye.projMat(1, 1) };
+			data.NDCToViewMul[eyeIndex] = { 2.0f / cameraData.projMat(0, 0), -2.0f / cameraData.projMat(1, 1) };
+			data.NDCToViewAdd[eyeIndex] = { -1.0f / cameraData.projMat(0, 0), 1.0f / cameraData.projMat(1, 1) };
 			data.NDCToViewMul_x_PixelSize[eyeIndex] = data.NDCToViewMul[eyeIndex] / res;
 			if (REL::Module::IsVR())
 				data.NDCToViewMul[eyeIndex].x *= 2;
 
-			prevInvView[eyeIndex] = eye.viewMat.Invert();
+			prevInvView[eyeIndex] = cameraData.viewMat.Invert();
 		}
 
 		data.FrameDim = res;
