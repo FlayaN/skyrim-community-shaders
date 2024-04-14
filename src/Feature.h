@@ -40,3 +40,34 @@ struct Feature
 
 	static const std::vector<Feature*>& GetFeatureList();
 };
+
+#define FEATURE_SETTINGS_H                    \
+	virtual void Load(json& o_json) override; \
+	virtual void Save(json& o_json) override; \
+	virtual void RestoreDefaultSettings();    \
+	Settings settings;
+
+#define FEATURE_SETTINGS(FeatureType, ...)                                                               \
+	inline void to_json(nlohmann::json& nlohmann_json_j, const FeatureType::Settings& nlohmann_json_t)   \
+	{                                                                                                    \
+		NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, __VA_ARGS__))                         \
+	}                                                                                                    \
+	inline void from_json(const nlohmann::json& nlohmann_json_j, FeatureType::Settings& nlohmann_json_t) \
+	{                                                                                                    \
+		const FeatureType::Settings nlohmann_json_default_obj{};                                         \
+		NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, __VA_ARGS__))          \
+	}                                                                                                    \
+	void FeatureType::Save(json& nlohmann_json_j)                                                        \
+	{                                                                                                    \
+		nlohmann_json_j[GetName()] = settings;                                                           \
+	}                                                                                                    \
+	void FeatureType::Load(json& o_json)                                                                 \
+	{                                                                                                    \
+		if (o_json[GetName()].is_object())                                                               \
+			settings = o_json[GetName()];                                                                \
+		Feature::Load(o_json);                                                                           \
+	}                                                                                                    \
+	void FeatureType::RestoreDefaultSettings()                                                           \
+	{                                                                                                    \
+		settings = {};                                                                                   \
+	}

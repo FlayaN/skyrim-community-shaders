@@ -18,8 +18,7 @@ struct CloudShadows : Feature
 
 	struct Settings
 	{
-		uint EnableCloudShadows = true;
-
+		uint32_t EnableCloudShadows = true;
 		float CloudHeight = 2e3f / 1.428e-2f;
 		float PlanetRadius = 6371e3f / 1.428e-2f;
 
@@ -27,7 +26,7 @@ struct CloudShadows : Feature
 
 		float TransparencyPower = 0.1f;
 		float AbsorptionAmbient = 0.2f;
-	} settings;
+	};
 
 	struct alignas(16) PerPass
 	{
@@ -58,11 +57,6 @@ struct CloudShadows : Feature
 	void ModifyLighting();
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor) override;
 
-	virtual void Load(json& o_json) override;
-	virtual void Save(json& o_json) override;
-
-	virtual void RestoreDefaultSettings() override;
-
 	virtual inline void PostPostLoad() override { Hooks::Install(); }
 
 	struct Hooks
@@ -78,4 +72,6 @@ struct CloudShadows : Feature
 			stl::write_thunk_call<BSBatchRenderer__RenderPassImmediately>(REL::RelocationID(100877, 107630).address() + REL::Relocate(0x1E5, 0xFD));  // need SE addr
 		}
 	};
+
+	FEATURE_SETTINGS_H
 };

@@ -52,8 +52,6 @@ struct ScreenSpaceShadows : Feature
 		uint32_t pad[1];
 	};
 
-	Settings settings;
-
 	ConstantBuffer* perPass = nullptr;
 
 	ID3D11SamplerState* computeSampler = nullptr;
@@ -84,10 +82,7 @@ struct ScreenSpaceShadows : Feature
 	void ModifyLighting(const RE::BSShader* shader, const uint32_t descriptor);
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
-	virtual void RestoreDefaultSettings();
-
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };

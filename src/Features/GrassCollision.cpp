@@ -3,8 +3,8 @@
 #include "State.h"
 #include "Util.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	GrassCollision::Settings,
+FEATURE_SETTINGS(
+	GrassCollision,
 	EnableGrassCollision,
 	RadiusMultiplier,
 	DisplacementMultiplier)
@@ -292,24 +292,6 @@ void GrassCollision::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 		ModifyGrass(shader, descriptor);
 		break;
 	}
-}
-
-void GrassCollision::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void GrassCollision::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void GrassCollision::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void GrassCollision::SetupResources()

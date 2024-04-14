@@ -6,27 +6,14 @@
 
 #include "magic_enum_flags.hpp"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	CloudShadows::Settings,
+FEATURE_SETTINGS(
+	CloudShadows,
 	EnableCloudShadows,
 	CloudHeight,
 	PlanetRadius,
 	EffectMix,
 	TransparencyPower,
 	AbsorptionAmbient)
-
-enum class SkyShaderTechniques
-{
-	SunOcclude = 0,
-	SunGlare = 1,
-	MoonAndStarsMask = 2,
-	Stars = 3,
-	Clouds = 4,
-	CloudsLerp = 5,
-	CloudsFade = 6,
-	Texture = 7,
-	Sky = 8,
-};
 
 void CloudShadows::DrawSettings()
 {
@@ -221,19 +208,6 @@ void CloudShadows::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 	}
 }
 
-void CloudShadows::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void CloudShadows::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
 void CloudShadows::SetupResources()
 {
 	auto renderer = RE::BSGraphics::Renderer::GetSingleton();
@@ -280,11 +254,6 @@ void CloudShadows::SetupResources()
 		srvDesc.Buffer.NumElements = 1;
 		perPass->CreateSRV(srvDesc);
 	}
-}
-
-void CloudShadows::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void CloudShadows::Hooks::BSBatchRenderer__RenderPassImmediately::thunk(RE::BSRenderPass* Pass, uint32_t Technique, bool AlphaTest, uint32_t RenderFlags)

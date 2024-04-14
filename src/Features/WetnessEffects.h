@@ -71,8 +71,6 @@ public:
 		float pad[3];
 	};
 
-	Settings settings;
-
 	std::unique_ptr<Buffer> perPass = nullptr;
 
 	std::unique_ptr<Texture2D> precipOcclusionTex = nullptr;
@@ -93,10 +91,6 @@ public:
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
-	virtual void RestoreDefaultSettings();
 	float CalculateWeatherTransitionPercentage(float skyCurrentWeatherPct, float beginFade, bool fadeIn);
 	void CalculateWetness(RE::TESWeather* weather, RE::Sky* sky, float seconds, float& wetness, float& puddleWetness);
 
@@ -117,4 +111,6 @@ public:
 	};
 
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };

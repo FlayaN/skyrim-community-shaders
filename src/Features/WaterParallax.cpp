@@ -2,8 +2,8 @@
 #include "State.h"
 #include "Util.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	WaterParallax::Settings,
+FEATURE_SETTINGS(
+	WaterParallax,
 	EnableWaterParallax)
 
 void WaterParallax::DrawSettings()
@@ -54,23 +54,6 @@ void WaterParallax::SetupResources()
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = 1;
 	perPass->CreateSRV(srvDesc);
-}
-
-void WaterParallax::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-	Feature::Load(o_json);
-}
-
-void WaterParallax::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void WaterParallax::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 bool WaterParallax::HasShaderDefine(RE::BSShader::Type)

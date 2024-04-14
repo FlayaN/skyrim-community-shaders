@@ -48,8 +48,6 @@ struct GrassCollision : Feature
 	std::vector<CollisionSData> collisionsData{};
 	std::uint32_t colllisionCount = 0;
 
-	Settings settings;
-
 	bool updatePerFrame = false;
 	ConstantBuffer* perFrame = nullptr;
 	int eyeCount = !REL::Module::IsVR() ? 1 : 2;
@@ -62,10 +60,7 @@ struct GrassCollision : Feature
 	void ModifyGrass(const RE::BSShader* shader, const uint32_t descriptor);
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
-	virtual void RestoreDefaultSettings();
-
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };

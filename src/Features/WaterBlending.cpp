@@ -1,8 +1,8 @@
 #include "WaterBlending.h"
 #include <Util.h>
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	WaterBlending::Settings,
+FEATURE_SETTINGS(
+	WaterBlending,
 	EnableWaterBlending,
 	WaterBlendRange,
 	EnableWaterBlendingSSR,
@@ -82,24 +82,6 @@ void WaterBlending::SetupResources()
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = 1;
 	perPass->CreateSRV(srvDesc);
-}
-
-void WaterBlending::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void WaterBlending::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void WaterBlending::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 bool WaterBlending::HasShaderDefine(RE::BSShader::Type)

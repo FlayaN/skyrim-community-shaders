@@ -2,8 +2,8 @@
 
 #include "Util.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	ExtendedMaterials::Settings,
+FEATURE_SETTINGS(
+	ExtendedMaterials,
 	EnableParallax,
 	EnableTerrain,
 	EnableComplexMaterial,
@@ -185,24 +185,6 @@ void ExtendedMaterials::SetupResources()
 	samplerDesc.MinLOD = 0;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	DX::ThrowIfFailed(device->CreateSamplerState(&samplerDesc, &terrainSampler));
-}
-
-void ExtendedMaterials::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void ExtendedMaterials::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void ExtendedMaterials::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 bool ExtendedMaterials::HasShaderDefine(RE::BSShader::Type shaderType)

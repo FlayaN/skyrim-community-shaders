@@ -3,8 +3,8 @@
 #include "State.h"
 #include "Util.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	DistantTreeLighting::Settings,
+FEATURE_SETTINGS(
+	DistantTreeLighting,
 	EnableComplexTreeLOD,
 	EnableDirLightFix,
 	SubsurfaceScatteringAmount)
@@ -131,24 +131,6 @@ void DistantTreeLighting::Draw(const RE::BSShader* shader, const uint32_t descri
 		ModifyDistantTree(shader, descriptor);
 		break;
 	}
-}
-
-void DistantTreeLighting::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void DistantTreeLighting::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void DistantTreeLighting::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void DistantTreeLighting::SetupResources()

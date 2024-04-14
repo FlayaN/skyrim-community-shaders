@@ -14,8 +14,8 @@ constexpr std::uint32_t CLUSTER_COUNT = CLUSTER_SIZE_X * CLUSTER_SIZE_Y * CLUSTE
 
 static constexpr uint MAX_LIGHTS = 2048;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	LightLimitFix::Settings,
+FEATURE_SETTINGS(
+	LightLimitFix,
 	EnableContactShadows,
 	EnableFirstPersonShadows,
 	EnableParticleLights,
@@ -254,23 +254,6 @@ void LightLimitFix::Reset()
 	particleLights.clear();
 	std::swap(particleLights, queuedParticleLights);
 	boundViews = false;
-}
-
-void LightLimitFix::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-	Feature::Load(o_json);
-}
-
-void LightLimitFix::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void LightLimitFix::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void LightLimitFix::BSLightingShader_SetupGeometry_Before(RE::BSRenderPass*)

@@ -2,8 +2,8 @@
 #include "Util.h"
 #include <DDSTextureLoader.h>
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	WaterCaustics::Settings,
+FEATURE_SETTINGS(
+	WaterCaustics,
 	EnableWaterCaustics)
 
 void WaterCaustics::DrawSettings()
@@ -59,24 +59,6 @@ void WaterCaustics::SetupResources()
 	srvDesc.Buffer.FirstElement = 0;
 	srvDesc.Buffer.NumElements = 1;
 	perPass->CreateSRV(srvDesc);
-}
-
-void WaterCaustics::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void WaterCaustics::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void WaterCaustics::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 bool WaterCaustics::HasShaderDefine(RE::BSShader::Type)

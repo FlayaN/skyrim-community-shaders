@@ -32,8 +32,6 @@ struct GrassLighting : Feature
 		float pad[1];
 	};
 
-	Settings settings;
-
 	bool updatePerFrame = false;
 	ConstantBuffer* perFrame = nullptr;
 	virtual void SetupResources();
@@ -43,10 +41,7 @@ struct GrassLighting : Feature
 	void ModifyGrass(const RE::BSShader* shader, const uint32_t descriptor);
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
-	virtual void RestoreDefaultSettings();
-
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };

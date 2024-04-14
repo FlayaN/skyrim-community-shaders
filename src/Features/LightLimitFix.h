@@ -138,11 +138,6 @@ public:
 	virtual void SetupResources();
 	virtual void Reset();
 
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
-
-	virtual void RestoreDefaultSettings();
-
 	virtual void DrawSettings();
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
 
@@ -179,8 +174,6 @@ public:
 
 	float lightsNear = 0.0f;
 	float lightsFar = 16384.0f;
-
-	Settings settings;
 
 	using ConfigPair = std::pair<ParticleLights::Config*, ParticleLights::GradientConfig*>;
 	std::optional<ConfigPair> GetParticleLightConfigs(RE::BSRenderPass* a_pass);
@@ -318,6 +311,8 @@ public:
 	};
 
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };
 
 template <>

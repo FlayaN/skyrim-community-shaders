@@ -5,8 +5,8 @@
 
 using RE::RENDER_TARGETS;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	ScreenSpaceShadows::Settings,
+FEATURE_SETTINGS(
+	ScreenSpaceShadows,
 	MaxSamples,
 	FarDistanceScale,
 	FarThicknessScale,
@@ -458,24 +458,6 @@ void ScreenSpaceShadows::Draw(const RE::BSShader* shader, const uint32_t descrip
 		ModifyLighting(shader, descriptor);
 		break;
 	}
-}
-
-void ScreenSpaceShadows::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void ScreenSpaceShadows::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void ScreenSpaceShadows::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void ScreenSpaceShadows::SetupResources()

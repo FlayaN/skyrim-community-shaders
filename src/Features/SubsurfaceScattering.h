@@ -34,8 +34,6 @@ public:
 		DiffusionProfile HumanProfile{ 1.0f, 1.0f, { 0.48f, 0.41f, 0.28f }, { 1.0f, 0.37f, 0.3f } };
 	};
 
-	Settings settings;
-
 	struct alignas(16) Kernel
 	{
 		float4 Sample[SSSS_N_SAMPLES];
@@ -85,7 +83,6 @@ public:
 
 	virtual void SetupResources();
 	virtual void Reset();
-	virtual void RestoreDefaultSettings();
 
 	virtual void DrawSettings();
 
@@ -98,9 +95,6 @@ public:
 	void DrawSSS();
 
 	virtual void Draw(const RE::BSShader* shader, const uint32_t descriptor);
-
-	virtual void Load(json& o_json);
-	virtual void Save(json& o_json);
 
 	virtual void ClearShaderCache();
 	ID3D11ComputeShader* GetComputeShaderHorizontalBlur();
@@ -181,4 +175,6 @@ public:
 	};
 
 	bool SupportsVR() override { return true; };
+
+	FEATURE_SETTINGS_H
 };

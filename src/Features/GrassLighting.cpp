@@ -3,8 +3,8 @@
 #include "State.h"
 #include "Util.h"
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	GrassLighting::Settings,
+FEATURE_SETTINGS(
+	GrassLighting,
 	Glossiness,
 	SpecularStrength,
 	SubsurfaceScatteringAmount,
@@ -117,24 +117,6 @@ void GrassLighting::Draw(const RE::BSShader* shader, const uint32_t descriptor)
 		ModifyGrass(shader, descriptor);
 		break;
 	}
-}
-
-void GrassLighting::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void GrassLighting::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void GrassLighting::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void GrassLighting::SetupResources()

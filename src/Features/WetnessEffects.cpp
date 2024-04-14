@@ -25,8 +25,8 @@ const float AVERAGE_RAIN_VOLUME = 4000.0f;
 const float MIN_RAINDROP_CHANCE_MULTIPLIER = 0.1f;
 const float MAX_RAINDROP_CHANCE_MULTIPLIER = 2.0f;
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	WetnessEffects::Settings,
+FEATURE_SETTINGS(
+	WetnessEffects,
 	EnableWetnessEffects,
 	MaxRainWetness,
 	MaxPuddleWetness,
@@ -427,24 +427,6 @@ void WetnessEffects::SetupResources()
 void WetnessEffects::Reset()
 {
 	requiresUpdate = true;
-}
-
-void WetnessEffects::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void WetnessEffects::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
-}
-
-void WetnessEffects::RestoreDefaultSettings()
-{
-	settings = {};
 }
 
 void WetnessEffects::Hooks::BSParticleShader_SetupGeometry::thunk(RE::BSShader* This, RE::BSRenderPass* Pass, uint32_t RenderFlags)

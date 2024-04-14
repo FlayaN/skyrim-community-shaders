@@ -7,8 +7,8 @@
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SubsurfaceScattering::DiffusionProfile,
 	BlurRadius, Thickness, Strength, Falloff)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-	SubsurfaceScattering::Settings,
+FEATURE_SETTINGS(
+	SubsurfaceScattering,
 	EnableCharacterLighting,
 	BaseProfile,
 	HumanProfile)
@@ -374,24 +374,6 @@ void SubsurfaceScattering::Reset()
 
 	CalculateKernel(settings.BaseProfile, blurCBData.BaseKernel);
 	CalculateKernel(settings.HumanProfile, blurCBData.HumanKernel);
-}
-
-void SubsurfaceScattering::RestoreDefaultSettings()
-{
-	settings = {};
-}
-
-void SubsurfaceScattering::Load(json& o_json)
-{
-	if (o_json[GetName()].is_object())
-		settings = o_json[GetName()];
-
-	Feature::Load(o_json);
-}
-
-void SubsurfaceScattering::Save(json& o_json)
-{
-	o_json[GetName()] = settings;
 }
 
 void SubsurfaceScattering::ClearShaderCache()
