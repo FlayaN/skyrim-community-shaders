@@ -6,6 +6,7 @@ cbuffer PerFrameDeferredShared : register(b0)
 	float4 CameraData;
 	float2 BufferDim;
 	float2 RcpBufferDim;
+	float2 InvDynamicRes;
 	float4x4 ViewMatrix[2];
 	float4x4 ProjMatrix[2];
 	float4x4 ViewProjMatrix[2];
@@ -14,5 +15,5 @@ cbuffer PerFrameDeferredShared : register(b0)
 	float4x4 InvViewProjMatrix[2];
 	row_major float3x4 DirectionalAmbient;
 	uint FrameCount;
-	uint pad0[3];
+	uint pad0[1];
 };

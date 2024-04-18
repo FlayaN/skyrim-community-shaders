@@ -17,7 +17,7 @@ RWTexture2D<half4> NormalTAAMaskSpecularMaskRW : register(u1);
 
 SamplerState LinearSampler : register(s0);
 
-// #	define DEBUG
+// #define DEBUG
 
 half GetScreenDepth(half depth)
 {
@@ -28,7 +28,7 @@ half GetScreenDepth(half depth)
 											 : SV_DispatchThreadID, uint3 localId
 											 : SV_GroupThreadID, uint3 groupId
 											 : SV_GroupID) {
-	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy;
+	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy * InvDynamicRes;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
 	half3 normalGlossiness = NormalRoughnessTexture[globalId.xy];
@@ -54,7 +54,7 @@ half GetScreenDepth(half depth)
 												   : SV_DispatchThreadID, uint3 localId
 												   : SV_GroupThreadID, uint3 groupId
 												   : SV_GroupID) {
-	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy;
+	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy * InvDynamicRes;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
 	half3 normalGlossiness = NormalRoughnessTexture[globalId.xy];
@@ -80,7 +80,7 @@ half GetScreenDepth(half depth)
 				for (int k = -1; k < 1; k++) {
 					if (i == 0 && k == 0)
 						continue;
-					float2 offset = float2(i, k) * RcpBufferDim.xy * 1.5;
+					float2 offset = float2(i, k) * RcpBufferDim.xy * InvDynamicRes * 1.5;
 					float sampleDepth = GetScreenDepth(DepthTexture.SampleLevel(LinearSampler, uv + offset, 0));
 					float attenuation = 1.0 - saturate(abs(sampleDepth - depth));
 					shadow += ShadowMaskTexture.SampleLevel(LinearSampler, uv + offset, 0) * attenuation;
@@ -102,7 +102,7 @@ half GetScreenDepth(half depth)
 												  : SV_DispatchThreadID, uint3 localId
 												  : SV_GroupThreadID, uint3 groupId
 												  : SV_GroupID) {
-	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy;
+	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy * InvDynamicRes;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
 	half3 normalGlossiness = NormalRoughnessTexture[globalId.xy];
@@ -130,7 +130,7 @@ half GetScreenDepth(half depth)
 											   : SV_DispatchThreadID, uint3 localId
 											   : SV_GroupThreadID, uint3 groupId
 											   : SV_GroupID) {
-	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy;
+	half2 uv = half2(globalId.xy + 0.5) * RcpBufferDim.xy * InvDynamicRes;
 	uint eyeIndex = GetEyeIndexFromTexCoord(uv);
 
 	half3 normalGlossiness = NormalRoughnessTexture[globalId.xy];
@@ -147,13 +147,15 @@ half GetScreenDepth(half depth)
 	half3 color = diffuseColor + specularColor;
 
 #if defined(DEBUG)
-	half2 texCoord = half2(globalId.xy) / BufferDim.xy;
-
-	if (texCoord.x < 0.5 && texCoord.y < 0.5) {
+#	if defined(VR)
+	uv = ConvertFromStereoUV(uv, eyeIndex);
+	uv.x += (eyeIndex ? 0.1 : -0.1);
+#	endif  // VR
+	if (uv.x < 0.5 && uv.y < 0.5) {
 		color = color;
-	} else if (texCoord.x < 0.5) {
+	} else if (uv.x < 0.5) {
 		color = albedo;
-	} else if (texCoord.y < 0.5) {
+	} else if (uv.y < 0.5) {
 		color = normalWS;
 	} else {
 		color = glossiness;

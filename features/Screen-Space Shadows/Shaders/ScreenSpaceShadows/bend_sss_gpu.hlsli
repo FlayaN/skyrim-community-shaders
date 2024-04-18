@@ -254,20 +254,10 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
 	bool skip_pixel = false;
 
 #	if defined(RIGHT)
-	pixel_xy.x += 1.0 / inParameters.InvDepthTextureSize.x;
+	pixel_xy.x += 1.0 / (inParameters.InvDepthTextureSize.x * InvDynamicRes.x);
 #	endif
 
 	half2 write_xy = floor(pixel_xy);
-
-#	if !defined(RIGHT)
-	half2 minUV = half2(0.0, 0.0);
-	half2 maxUV = half2(0.5, 1.0);
-#	else
-	half2 minUV = half2(0.5, 0.0);
-	half2 maxUV = half2(1.0, 1.0);
-#	endif
-
-	half2 uv = pixel_xy * inParameters.InvDepthTextureSize * half2(0.5, 1.0);
 
 	[unroll] for (i = 0; i < READ_COUNT; i++)
 	{
@@ -291,15 +281,18 @@ void WriteScreenSpaceShadow(DispatchParameters inParameters, int3 inGroupID, int
 
 		// HLSL enforces that a pixel offset is a compile-time constant, which isn't strictly required (and can sometimes be a bit faster)
 		// So this fallback will use a manual uv offset instead
+		float2 uvMult = inParameters.InvDepthTextureSize * InvDynamicRes;
 #	if defined(VR)
-		depths.x = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, read_xy * inParameters.InvDepthTextureSize * half2(0.5, 1.0), 0);
-		depths.y = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, (read_xy + offset_xy) * inParameters.InvDepthTextureSize * half2(0.5, 1.0), 0);
+		uvMult *= float2(0.5, 1.0);
+#	endif  // VR
+
+		depths.x = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, read_xy * uvMult, 0);
+		depths.y = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, (read_xy + offset_xy) * uvMult, 0);
+
+#	if defined(VR)
 		depths.x = lerp(depths.x, 1.0, (float)(depths.x == 0));  // Stencil area
 		depths.y = lerp(depths.y, 1.0, (float)(depths.y == 0));  // Stencil area
-#	else
-		depths.x = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, read_xy * inParameters.InvDepthTextureSize, 0);
-		depths.y = inParameters.DepthTexture.SampleLevel(inParameters.PointBorderSampler, (read_xy + offset_xy) * inParameters.InvDepthTextureSize, 0);
-#	endif
+#	endif  // VR
 
 		// Depth thresholds (bilinear/shadow thickness) are based on a fractional ratio of the difference between sampled depth and the far clip depth
 		depth_thickness_scale[i] = abs(inParameters.FarDepthValue - depths.x);

@@ -267,6 +267,9 @@ void Deferred::UpdateConstantBuffer()
 	data.RcpBufferDim.x = 1.0f / State::GetSingleton()->screenWidth;
 	data.RcpBufferDim.y = 1.0f / State::GetSingleton()->screenHeight;
 
+	data.InvDynamicRes.x = 1.0f / viewport->GetRuntimeData().dynamicResolutionCurrentWidthScale;
+	data.InvDynamicRes.y = 1.0f / viewport->GetRuntimeData().dynamicResolutionCurrentHeightScale;
+
 	auto useTAA = !REL::Module::IsVR() ? imageSpaceManager->GetRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled : imageSpaceManager->GetVRRuntimeData().BSImagespaceShaderISTemporalAA->taaEnabled;
 	data.FrameCount = useTAA ? viewport->uiFrameCount : 0;
 
