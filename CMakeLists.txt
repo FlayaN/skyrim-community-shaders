@@ -158,6 +158,17 @@ if(AUTO_PLUGIN_DEPLOYMENT OR AIO_ZIP_TO_DIST)
 		DEPENDS ${HLSL_FILES}
 	)
 
+	include(CompileShader)
+
+	compile_shader("Particle.hlsl" "GRAYSCALE_TO_COLOR;ENVCUBE;SNOW")
+	compile_shader("Particle.hlsl" "GRAYSCALE_TO_ALPHA;ENVCUBE;RAIN")
+	compile_shader("Water.hlsl" "SPECULAR")
+
+	add_custom_target(COMPILE_SHADERS ALL
+		DEPENDS
+			${SHADER_STAMPS}
+	)
+
 endif()
 
 # Automatic deployment to CommunityShaders output directory.

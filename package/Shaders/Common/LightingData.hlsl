@@ -1,5 +1,5 @@
-#include "Common/Constants.hlsli"
-#include "Common/VR.hlsli"
+#include "../Common/Constants.hlsli"
+#include "../Common/VR.hlsli"
 
 #if defined(PSHADER)
 
