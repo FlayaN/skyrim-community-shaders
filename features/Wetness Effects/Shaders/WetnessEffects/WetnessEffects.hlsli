@@ -1,4 +1,4 @@
-#include "WetnessEffects/optimized-ggx.hlsl"
+#include "WetnessEffects/optimized-ggx.hlsli"
 
 struct PerPassWetnessEffects
 {

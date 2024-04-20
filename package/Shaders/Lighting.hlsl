@@ -1,8 +1,8 @@
-#include "Common/Color.hlsl"
-#include "Common/FrameBuffer.hlsl"
-#include "Common/LightingData.hlsl"
-#include "Common/MotionBlur.hlsl"
-#include "Common/Permutation.hlsl"
+#include "Common/Color.hlsli"
+#include "Common/FrameBuffer.hlsli"
+#include "Common/LightingData.hlsli"
+#include "Common/MotionBlur.hlsli"
+#include "Common/Permutation.hlsli"
 
 #define PI 3.1415927
 

@@ -1,4 +1,4 @@
-#include "Common.hlsl"
+#include "Common.hlsli"
 
 Texture2D<float> ShadowTexture : register(t1);
 

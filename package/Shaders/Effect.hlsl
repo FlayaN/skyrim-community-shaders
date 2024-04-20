@@ -438,11 +438,11 @@ struct PS_OUTPUT
 
 #ifdef PSHADER
 
-#	include "Common/Color.hlsl"
-#	include "Common/FrameBuffer.hlsl"
-#	include "Common/MotionBlur.hlsl"
-#	include "Common/Permutation.hlsl"
-#	include "Common/LightingData.hlsl"
+#	include "Common/Color.hlsli"
+#	include "Common/FrameBuffer.hlsli"
+#	include "Common/MotionBlur.hlsli"
+#	include "Common/Permutation.hlsli"
+#	include "Common/LightingData.hlsli"
 
 cbuffer AlphaTestRefBuffer : register(b11)
 {

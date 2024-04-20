@@ -27,7 +27,7 @@
 
 // HAVE FUN!
 
-#include "Common.hlsl"
+#include "Common.hlsli"
 
 Texture2D<float> OcclusionTexture : register(t1);
 

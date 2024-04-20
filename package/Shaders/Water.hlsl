@@ -1,10 +1,10 @@
-#include "Common/FrameBuffer.hlsl"
-#include "Common/MotionBlur.hlsl"
-#include "Common/Permutation.hlsl"
+#include "Common/FrameBuffer.hlsli"
+#include "Common/MotionBlur.hlsli"
+#include "Common/Permutation.hlsli"
 
 #define WATER
 
-#include "Common/LightingData.hlsl"
+#include "Common/LightingData.hlsli"
 
 struct VS_INPUT
 {
