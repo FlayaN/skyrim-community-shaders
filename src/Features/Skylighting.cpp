@@ -161,12 +161,11 @@ void Skylighting::CompileComputeShaders()
 void Skylighting::Prepass()
 {
 	auto& context = State::GetSingleton()->context;
-	auto state = RE::BSGraphics::RendererShadowState::GetSingleton();
 
 	{
 		static float3 prevCellID = { 0, 0, 0 };
 
-		auto eyePosNI = !REL::Module::IsVR() ? state->GetRuntimeData().posAdjust.getEye() : state->GetVRRuntimeData().posAdjust.getEye();
+		auto eyePosNI = Util::GetEyePosition(0);
 		auto eyePos = float3{ eyePosNI.x, eyePosNI.y, eyePosNI.z };
 
 		float3 cellSize = {
@@ -316,163 +315,7 @@ enum class ShaderTechnique
 	BloodSplaterSplatter = 0x5C006074,
 };
 
-class BSUtilityShader : public RE::BSShader
-{
-public:
-	enum class Flags
-	{
-		None = 0,
-		Vc = 1 << 0,
-		Texture = 1 << 1,
-		Skinned = 1 << 2,
-		Normals = 1 << 3,
-		BinormalTangent = 1 << 4,
-		AlphaTest = 1 << 7,
-		LodLandscape = 1 << 8,
-		RenderNormal = 1 << 9,
-		RenderNormalFalloff = 1 << 10,
-		RenderNormalClamp = 1 << 11,
-		RenderNormalClear = 1 << 12,
-		RenderDepth = 1 << 13,
-		RenderShadowmap = 1 << 14,
-		RenderShadowmapClamped = 1 << 15,
-		GrayscaleToAlpha = 1 << 15,
-		RenderShadowmapPb = 1 << 16,
-		AdditionalAlphaMask = 1 << 16,
-		DepthWriteDecals = 1 << 17,
-		DebugShadowSplit = 1 << 18,
-		DebugColor = 1 << 19,
-		GrayscaleMask = 1 << 20,
-		RenderShadowmask = 1 << 21,
-		RenderShadowmaskSpot = 1 << 22,
-		RenderShadowmaskPb = 1 << 23,
-		RenderShadowmaskDpb = 1 << 24,
-		RenderBaseTexture = 1 << 25,
-		TreeAnim = 1 << 26,
-		LodObject = 1 << 27,
-		LocalMapFogOfWar = 1 << 28,
-		OpaqueEffect = 1 << 29,
-	};
-
-	static BSUtilityShader* GetSingleton()
-	{
-		REL::Relocation<BSUtilityShader**> singleton{ RELOCATION_ID(528354, 415300) };
-		return *singleton;
-	}
-	~BSUtilityShader() override;  // 00
-
-	// override (BSShader)
-	bool SetupTechnique(std::uint32_t globalTechnique) override;            // 02
-	void RestoreTechnique(std::uint32_t globalTechnique) override;          // 03
-	void SetupGeometry(RE::BSRenderPass* pass, uint32_t flags) override;    // 06
-	void RestoreGeometry(RE::BSRenderPass* pass, uint32_t flags) override;  // 07
-};
-
-struct RenderPassArray
-{
-	static RE::BSRenderPass* MakeRenderPass(RE::BSShader* shader, RE::BSShaderProperty* property, RE::BSGeometry* geometry,
-		uint32_t technique, uint8_t numLights, RE::BSLight** lights)
-	{
-		using func_t = decltype(&RenderPassArray::MakeRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100717, 107497) };
-		return func(shader, property, geometry, technique, numLights, lights);
-	}
-
-	static void ClearRenderPass(RE::BSRenderPass* pass)
-	{
-		using func_t = decltype(&RenderPassArray::ClearRenderPass);
-		REL::Relocation<func_t> func{ RELOCATION_ID(100718, 107498) };
-		func(pass);
-	}
-
-	void Clear()
-	{
-		while (head != nullptr) {
-			RE::BSRenderPass* next = head->next;
-			ClearRenderPass(head);
-			head = next;
-		}
-		head = nullptr;
-	}
-
-	RE::BSRenderPass* EmplacePass(RE::BSShader* shader, RE::BSShaderProperty* property, RE::BSGeometry* geometry,
-		uint32_t technique, uint8_t numLights = 0, RE::BSLight* light0 = nullptr, RE::BSLight* light1 = nullptr,
-		RE::BSLight* light2 = nullptr, RE::BSLight* light3 = nullptr)
-	{
-		RE::BSLight* lights[4];
-		lights[0] = light0;
-		lights[1] = light1;
-		lights[2] = light2;
-		lights[3] = light3;
-		auto* newPass = MakeRenderPass(shader, property, geometry, technique, numLights, lights);
-		if (head != nullptr) {
-			RE::BSRenderPass* lastPass = head;
-			while (lastPass->next != nullptr) {
-				lastPass = lastPass->next;
-			}
-			lastPass->next = newPass;
-		} else {
-			head = newPass;
-		}
-		return newPass;
-	}
-
-	RE::BSRenderPass* head;  // 00
-	uint64_t unk08;          // 08
-};
-
-class BSBatchRenderer
-{
-public:
-	struct PersistentPassList
-	{
-		RE::BSRenderPass* m_Head;
-		RE::BSRenderPass* m_Tail;
-	};
-
-	struct GeometryGroup
-	{
-		BSBatchRenderer* m_BatchRenderer;
-		PersistentPassList m_PassList;
-		uintptr_t UnkPtr4;
-		float m_Depth;  // Distance from geometry to camera location
-		uint16_t m_Count;
-		uint8_t m_Flags;  // Flags
-	};
-
-	struct PassGroup
-	{
-		RE::BSRenderPass* m_Passes[5];
-		uint32_t m_ValidPassBits;  // OR'd with (1 << PassIndex)
-	};
-
-	RE::BSTArray<void*> unk008;                       // 008
-	RE::BSTHashMap<RE::UnkKey, RE::UnkValue> unk020;  // 020
-	std::uint64_t unk050;                             // 050
-	std::uint64_t unk058;                             // 058
-	std::uint64_t unk060;                             // 060
-	std::uint64_t unk068;                             // 068
-	GeometryGroup* m_GeometryGroups[16];
-	GeometryGroup* m_AlphaGroup;
-	void* unk1;
-	void* unk2;
-};
-
 //////////////////////////////////////////////////////////////
-
-static void Precipitation_SetupMask(RE::Precipitation* a_This)
-{
-	using func_t = decltype(&Precipitation_SetupMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25641, 26183) };
-	func(a_This);
-}
-
-static void Precipitation_RenderMask(RE::Precipitation* a_This, BSParticleShaderRainEmitter* a_emitter)
-{
-	using func_t = decltype(&Precipitation_RenderMask);
-	REL::Relocation<func_t> func{ REL::RelocationID(25642, 26184) };
-	func(a_This, a_emitter);
-}
 
 void* Skylighting::BSLightingShaderProperty_GetPrecipitationOcclusionMapRenderPassesImpl::thunk(
 	RE::BSLightingShaderProperty* property,
@@ -480,13 +323,12 @@ void* Skylighting::BSLightingShaderProperty_GetPrecipitationOcclusionMapRenderPa
 	[[maybe_unused]] uint32_t renderMode,
 	[[maybe_unused]] RE::BSGraphics::BSShaderAccumulator* accumulator)
 {
-	auto batch = (BSBatchRenderer*)accumulator->GetRuntimeData().batchRenderer;
+	auto batch = accumulator->GetRuntimeData().batchRenderer;
 	batch->m_GeometryGroups[14]->m_Flags &= ~1;
 
 	using enum RE::BSShaderProperty::EShaderPropertyFlag;
-	using enum BSUtilityShader::Flags;
 
-	auto* precipitationOcclusionMapRenderPassList = reinterpret_cast<RenderPassArray*>(&property->unk0C8);
+	auto* precipitationOcclusionMapRenderPassList = reinterpret_cast<RE::BSShaderProperty::RenderPassArray*>(&property->unk0C8);
 
 	precipitationOcclusionMapRenderPassList->Clear();
 	if (GetSingleton()->inOcclusion && !GetSingleton()->renderTrees) {
@@ -499,11 +341,11 @@ void* Skylighting::BSLightingShaderProperty_GetPrecipitationOcclusionMapRenderPa
 
 	if (property->flags.any(kZBufferWrite) && property->flags.none(kRefraction, kTempRefraction, kMultiTextureLandscape, kNoLODLandBlend, kLODLandscape, kEyeReflect, kDecal, kDynamicDecal, kAnisotropicLighting) && !(property->flags.any(kSkinned) && property->flags.none(kTreeAnim))) {
 		if (geometry->worldBound.radius > GetSingleton()->boundSize) {
-			stl::enumeration<BSUtilityShader::Flags> technique;
-			technique.set(RenderDepth);
+			stl::enumeration<RE::BSUtilityShader::Flags> technique;
+			technique.set(RE::BSUtilityShader::Flags::RenderDepth);
 
 			auto pass = precipitationOcclusionMapRenderPassList->EmplacePass(
-				BSUtilityShader::GetSingleton(),
+				RE::BSUtilityShader::GetSingleton(),
 				property,
 				geometry,
 				technique.underlying() + static_cast<uint32_t>(ShaderTechnique::UtilityGeneralStart));
@@ -524,26 +366,25 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 	auto sky = RE::Sky::GetSingleton();
 	auto precip = sky->precip;
 
-	auto shadowState = RE::BSGraphics::RendererShadowState::GetSingleton();
-	GetSingleton()->eyePosition = shadowState->GetRuntimeData().posAdjust.getEye();
+	GetSingleton()->eyePosition = Util::GetEyePosition(0);
 
 	if (GetSingleton()->doOcclusion) {
 		{
 			doPrecip = false;
 
-			auto precipObject = precip->currentPrecip;
+			auto& precipObject = precip->currentPrecip;
 			if (!precipObject) {
 				precipObject = precip->lastPrecip;
 			}
 			if (precipObject) {
-				Precipitation_SetupMask(precip);
-				Precipitation_SetupMask(precip);  // Calling setup twice fixes an issue when it is raining
+				precip->SetupMask();
+				precip->SetupMask();  // Calling setup twice fixes an issue when it is raining
 				auto effect = precipObject->GetGeometryRuntimeData().properties[RE::BSGeometry::States::kEffect];
 				auto shaderProp = netimmerse_cast<RE::BSShaderProperty*>(effect.get());
 				auto particleShaderProperty = netimmerse_cast<RE::BSParticleShaderProperty*>(shaderProp);
-				auto rain = (BSParticleShaderRainEmitter*)(particleShaderProperty->particleEmitter);
+				auto rain = (RE::BSParticleShaderRainEmitter*)particleShaderProperty->particleEmitter;
 
-				Precipitation_RenderMask(precip, rain);
+				precip->RenderMask(rain);
 			}
 		}
 
@@ -577,7 +418,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 				static uint randFrameCount = 0;
 
 				// r2 sequence
-				vPoint = float2(randSeed * rcpRandMax) + (float)randFrameCount * float2(0.245122333753, 0.430159709002);
+				vPoint = float2(randSeed * rcpRandMax) + (float)randFrameCount * float2(0.245122333753f, 0.430159709002f);
 				vPoint.x -= static_cast<unsigned long long>(vPoint.x);
 				vPoint.y -= static_cast<unsigned long long>(vPoint.y);
 
@@ -589,7 +430,7 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 				// disc transformation
 				vPoint.x = sqrt(vPoint.x * sin(GetSingleton()->settings.MaxZenith));
-				vPoint.y *= 6.28318530718;
+				vPoint.y *= 6.28318530718f;
 
 				vPoint = { vPoint.x * cos(vPoint.y), vPoint.x * sin(vPoint.y) };
 			}
@@ -599,15 +440,14 @@ void Skylighting::Main_Precipitation_RenderOcclusion::thunk()
 
 			PrecipitationShaderDirection = { PrecipitationShaderDirectionF.x, PrecipitationShaderDirectionF.y, PrecipitationShaderDirectionF.z };
 
-			Precipitation_SetupMask(precip);
-			Precipitation_SetupMask(precip);  // Calling setup twice fixes an issue when it is raining
+			precip->SetupMask();
+			precip->SetupMask();  // Calling setup twice fixes an issue when it is raining
 
-			BSParticleShaderRainEmitter* rain = new BSParticleShaderRainEmitter;
-			Precipitation_RenderMask(precip, rain);
+			auto rain = (RE::BSParticleShaderRainEmitter*)new BSParticleShaderRainEmitter;
+			precip->RenderMask(rain);
 			GetSingleton()->inOcclusion = false;
-			RE::BSParticleShaderCubeEmitter* cube = (RE::BSParticleShaderCubeEmitter*)rain;
-
 			GetSingleton()->OcclusionDir = -float4{ PrecipitationShaderDirectionF.x, PrecipitationShaderDirectionF.y, PrecipitationShaderDirectionF.z, 0 };
+			RE::BSParticleShaderCubeEmitter* cube = (RE::BSParticleShaderCubeEmitter*)rain;
 			GetSingleton()->OcclusionTransform = cube->occlusionProjection;
 
 			cube = nullptr;
