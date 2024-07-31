@@ -6,19 +6,12 @@ void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, cons
 	unsigned debugFlags, const char* file, int line);
 
 #pragma warning(push)
-#if defined(FALLOUT4)
-#	include "F4SE/F4SE.h"
-#	include "RE/Fallout.h"
-#	define SKSE F4SE
-#	define SKSEAPI F4SEAPI
-#	define SKSEPlugin_Load F4SEPlugin_Load
-#	define SKSEPlugin_Query F4SEPlugin_Query
-#else
-#	define SKSE_SUPPORT_XBYAK
-#	include "RE/Skyrim.h"
-#	include "SKSE/SKSE.h"
-#	include <xbyak/xbyak.h>
-#endif
+#define SKSE_SUPPORT_XBYAK
+#include "RE/Skyrim.h"
+#include "SKSE/SKSE.h"
+#include <xbyak/xbyak.h>
+
+#include <detours/Detours.h>
 
 #ifdef NDEBUG
 #	include <spdlog/sinks/basic_file_sink.h>
@@ -37,20 +30,12 @@ namespace stl
 {
 	using namespace SKSE::stl;
 
-	template <class T>
+	template <class T, std::size_t Size = 5>
 	void write_thunk_call(std::uintptr_t a_src)
 	{
 		SKSE::AllocTrampoline(14);
 		auto& trampoline = SKSE::GetTrampoline();
-		T::func = trampoline.write_call<5>(a_src, T::thunk);
-	}
-
-	template <class T>
-	void write_thunk_call_6(std::uintptr_t a_src)
-	{
-		SKSE::AllocTrampoline(14);
-		auto& trampoline = SKSE::GetTrampoline();
-		T::func = *(uintptr_t*)trampoline.write_call<6>(a_src, T::thunk);
+		T::func = trampoline.write_call<Size>(a_src, T::thunk);
 	}
 
 	template <class F, size_t index, class T>
@@ -79,6 +64,18 @@ namespace stl
 	void write_vfunc()
 	{
 		write_vfunc<F, 0, T>();
+	}
+
+	template <class T>
+	void detour_thunk(REL::RelocationID a_relId)
+	{
+		*(uintptr_t*)&T::func = Detours::X64::DetourFunction(a_relId.address(), (uintptr_t)&T::thunk);
+	}
+
+	template <class T>
+	void detour_thunk_ignore_func(REL::RelocationID a_relId)
+	{
+		std::ignore = Detours::X64::DetourFunction(a_relId.address(), (uintptr_t)&T::thunk);
 	}
 }
 
