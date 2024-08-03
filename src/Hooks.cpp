@@ -57,38 +57,6 @@ void DumpShader(const REX::BSShader* thisClass, const ShaderType* shader, const 
 	delete[] dxbcData;
 }
 
-decltype(&IDXGISwapChain::Present) ptr_IDXGISwapChain_Present;
-
-HRESULT WINAPI hk_IDXGISwapChain_Present(IDXGISwapChain* This, UINT SyncInterval, UINT Flags)
-{
-	State::GetSingleton()->Reset();
-	Menu::GetSingleton()->DrawOverlay();
-	return (This->*ptr_IDXGISwapChain_Present)(SyncInterval, Flags);
-}
-
-decltype(&ID3D11Device::CreateVertexShader) ptrCreateVertexShader;
-decltype(&ID3D11Device::CreatePixelShader) ptrCreatePixelShader;
-
-HRESULT hk_CreateVertexShader(ID3D11Device* This, const void* pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage* pClassLinkage, ID3D11VertexShader** ppVertexShader)
-{
-	HRESULT hr = (This->*ptrCreateVertexShader)(pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
-
-	if (SUCCEEDED(hr))
-		RegisterShaderBytecode(*ppVertexShader, pShaderBytecode, BytecodeLength);
-
-	return hr;
-}
-
-HRESULT STDMETHODCALLTYPE hk_CreatePixelShader(ID3D11Device* This, const void* pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage* pClassLinkage, ID3D11PixelShader** ppPixelShader)
-{
-	HRESULT hr = (This->*ptrCreatePixelShader)(pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
-
-	if (SUCCEEDED(hr))
-		RegisterShaderBytecode(*ppPixelShader, pShaderBytecode, BytecodeLength);
-
-	return hr;
-}
-
 // decltype(&D3D11CreateDeviceAndSwapChain) ptrD3D11CreateDeviceAndSwapChain;
 
 // HRESULT WINAPI hk_D3D11CreateDeviceAndSwapChain(
@@ -132,6 +100,45 @@ HRESULT STDMETHODCALLTYPE hk_CreatePixelShader(ID3D11Device* This, const void* p
 
 namespace Hooks
 {
+	struct IDXGISwapChain_Present
+	{
+		static HRESULT WINAPI thunk(IDXGISwapChain* This, UINT SyncInterval, UINT Flags)
+		{
+			State::GetSingleton()->Reset();
+			Menu::GetSingleton()->DrawOverlay();
+			return func(This, SyncInterval, Flags);
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct ID3D11Device_CreateVertexShader
+	{
+		static HRESULT thunk(ID3D11Device* This, const void* pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage* pClassLinkage, ID3D11VertexShader** ppVertexShader)
+		{
+			HRESULT hr = func(This, pShaderBytecode, BytecodeLength, pClassLinkage, ppVertexShader);
+
+			if (SUCCEEDED(hr))
+				RegisterShaderBytecode(*ppVertexShader, pShaderBytecode, BytecodeLength);
+
+			return hr;
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
+	struct ID3D11Device_CreatePixelShader
+	{
+		static HRESULT STDMETHODCALLTYPE thunk(ID3D11Device* This, const void* pShaderBytecode, SIZE_T BytecodeLength, ID3D11ClassLinkage* pClassLinkage, ID3D11PixelShader** ppPixelShader)
+		{
+			HRESULT hr = func(This, pShaderBytecode, BytecodeLength, pClassLinkage, ppPixelShader);
+
+			if (SUCCEEDED(hr))
+				RegisterShaderBytecode(*ppPixelShader, pShaderBytecode, BytecodeLength);
+
+			return hr;
+		}
+		static inline REL::Relocation<decltype(thunk)> func;
+	};
+
 	struct BSShader_LoadShaders
 	{
 		static void thunk(RE::BSShader* shader, std::uintptr_t stream)
@@ -289,12 +296,12 @@ namespace Hooks
 
 			logger::info("Detouring virtual function tables");
 
-			*(uintptr_t*)&ptr_IDXGISwapChain_Present = Detours::X64::DetourClassVTable(*(uintptr_t*)swapchain, &hk_IDXGISwapChain_Present, 8);
+			stl::detour_vfunc<0x8, IDXGISwapChain_Present>(swapchain);
 
 			auto& shaderCache = SIE::ShaderCache::Instance();
 			if (shaderCache.IsDump()) {
-				*(uintptr_t*)&ptrCreateVertexShader = Detours::X64::DetourClassVTable(*(uintptr_t*)device, &hk_CreateVertexShader, 12);
-				*(uintptr_t*)&ptrCreatePixelShader = Detours::X64::DetourClassVTable(*(uintptr_t*)device, &hk_CreatePixelShader, 15);
+				stl::detour_vfunc<0xC, ID3D11Device_CreateVertexShader>(device);
+				stl::detour_vfunc<0xF, ID3D11Device_CreatePixelShader>(device);
 			}
 			Menu::GetSingleton()->Init(swapchain, device, context);
 		}

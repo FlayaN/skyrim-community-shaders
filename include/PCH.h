@@ -77,6 +77,12 @@ namespace stl
 	{
 		std::ignore = Detours::X64::DetourFunction(a_relId.address(), (uintptr_t)&T::thunk);
 	}
+	
+	template <std::size_t idx, class T>
+	void detour_vfunc(void* target)
+	{
+		*(uintptr_t*)&T::func = Detours::X64::DetourClassVTable(*(uintptr_t*)target, &T::thunk, idx);
+	}
 }
 
 namespace logger = SKSE::log;
